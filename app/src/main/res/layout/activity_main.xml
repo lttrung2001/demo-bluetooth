@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:id="@+id/main"
     android:layout_width="match_parent"
@@ -7,13 +8,21 @@
     android:orientation="vertical"
     tools:context=".MainActivity">
 
+    <androidx.recyclerview.widget.RecyclerView
+        android:id="@+id/rv_founded_devices"
+        android:layout_width="match_parent"
+        android:layout_height="500dp"
+        android:orientation="vertical"
+        app:layoutManager="androidx.recyclerview.widget.LinearLayoutManager"
+        tools:listitem="@layout/item_bluetooth_device" />
+
     <TextView
         android:id="@+id/tv_hello_world"
         android:layout_width="match_parent"
         android:layout_height="0dp"
         android:layout_weight="1"
         android:gravity="center"
-        android:text="Hello World!" />
+        android:text="Tìm các thiết bị kết nối bluetooth" />
 
     <TextView
         android:id="@+id/tv_enable_socket_server"
@@ -21,7 +30,7 @@
         android:layout_height="0dp"
         android:layout_weight="1"
         android:gravity="center"
-        android:text="Hello World!" />
+        android:text="Bật socket server" />
 
     <TextView
         android:id="@+id/tv_send_data"
@@ -29,5 +38,5 @@
         android:layout_height="0dp"
         android:layout_weight="1"
         android:gravity="center"
-        android:text="Hello World!" />
+        android:text="Gửi data đến thiết bị đã kết nối" />
 </LinearLayout>

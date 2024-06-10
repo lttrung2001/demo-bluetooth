@@ -5,8 +5,6 @@ import android.annotation.SuppressLint
 import android.bluetooth.BluetoothAdapter
 import android.bluetooth.BluetoothDevice
 import android.bluetooth.BluetoothSocket
-import android.bluetooth.le.ScanCallback
-import android.bluetooth.le.ScanResult
 import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
@@ -24,11 +22,20 @@ import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.lifecycle.lifecycleScope
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import vn.trunglt.demobluetooth.adapters.DeviceAdapter
+import vn.trunglt.demobluetooth.databinding.ActivityMainBinding
 import java.util.UUID
 
 class MainActivity : AppCompatActivity() {
+    private val binding by lazy {
+        ActivityMainBinding.inflate(layoutInflater)
+    }
+    private val foundedDeviceAdapter by lazy {
+        DeviceAdapter {
+            connect(it)
+        }
+    }
     private val bluetoothAdapter by lazy {
         BluetoothAdapter.getDefaultAdapter()
     }
@@ -47,13 +54,17 @@ class MainActivity : AppCompatActivity() {
                     val deviceName = device.name
                     val deviceHardwareAddress = device.address // MAC address
                     if (deviceName != null) {
-                        println("DISCOVER: ${deviceName}===${deviceHardwareAddress}")
+                        val list = foundedDeviceAdapter.currentList.toMutableList()
+                        list.add(device)
+                        foundedDeviceAdapter.submitList(list)
+                        println("${deviceName}=${deviceHardwareAddress}")
                     }
-                    if (deviceName == "TRUNGLT") {
-                        bluetoothDevice = device
-                        bluetoothAdapter.cancelDiscovery()
-                    }
+//                    if (deviceName == "TRUNGLT") {
+//                        bluetoothDevice = device
+//                        bluetoothAdapter.cancelDiscovery()
+//                    }
                 }
+
                 BluetoothDevice.ACTION_BOND_STATE_CHANGED -> {
                     val bondState = intent.getIntExtra(
                         BluetoothDevice.EXTRA_BOND_STATE,
@@ -63,14 +74,17 @@ class MainActivity : AppCompatActivity() {
                         BluetoothDevice.BOND_BONDED -> {
                             startConnectSocket()
                         }
+
                         BluetoothDevice.BOND_BONDING -> {
 
                         }
+
                         BluetoothDevice.BOND_NONE -> {
 
                         }
                     }
                 }
+
                 BluetoothAdapter.ACTION_DISCOVERY_FINISHED -> {
                     connect(bluetoothDevice)
                 }
@@ -81,12 +95,13 @@ class MainActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
-        setContentView(R.layout.activity_main)
+        setContentView(binding.root)
         ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.main)) { v, insets ->
             val systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars())
             v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom)
             insets
         }
+        setupAdapter()
         registerDiscoveryBluetoothReceiver()
         queryPairedDevicesUsingBluetooth()
         setListener()
@@ -106,17 +121,17 @@ class MainActivity : AppCompatActivity() {
             val requestCode = 1
             requestPermissions(getBluetoothPermissions(), requestCode)
         } else {
-            val pairedDevices: Set<BluetoothDevice>? = bluetoothAdapter?.bondedDevices
-            pairedDevices?.forEach { device ->
-                val deviceName = device.name
-                val deviceHardwareAddress = device.address // MAC address
-                println("${deviceName}===${deviceHardwareAddress}")
-                if (deviceName == "TRUNGLT") {
-                    bluetoothDevice = device
-                    startConnectSocket()
-                    println("Kết nối socket thành công")
-                }
-            }
+//            val pairedDevices: Set<BluetoothDevice>? = bluetoothAdapter?.bondedDevices
+//            pairedDevices?.forEach { device ->
+//                val deviceName = device.name
+//                val deviceHardwareAddress = device.address // MAC address
+//                println("${deviceName}===${deviceHardwareAddress}")
+//                if (deviceName == "TRUNGLT") {
+//                    bluetoothDevice = device
+//                    startConnectSocket()
+//                    println("Kết nối socket thành công")
+//                }
+//            }
         }
     }
 
@@ -271,7 +286,11 @@ class MainActivity : AppCompatActivity() {
                     application.packageName,
                     UUID.fromString("TRUNGLETHANHVNPAY")
                 )
-                val bluetoothSocket = bluetoothServerSocket.accept()
+                Thread {
+                    val bluetoothSocket = bluetoothServerSocket.accept()
+                    val message = String(bluetoothSocket.inputStream.readBytes())
+                    Toast.makeText(this, message, Toast.LENGTH_LONG).show()
+                }.start()
             } catch (e: Exception) {
                 e.printStackTrace()
             }
@@ -316,5 +335,9 @@ class MainActivity : AppCompatActivity() {
                 println("Đã gửi dữ liệu")
             }
         }
+    }
+
+    private fun setupAdapter() {
+        binding.rvFoundedDevices.adapter = foundedDeviceAdapter
     }
 }
